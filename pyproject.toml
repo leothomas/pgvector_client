@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Leo Thomas <leo@developmentseed.org>"]
 readme = "README.md"
+packages = [{include = "pgvector_client"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"

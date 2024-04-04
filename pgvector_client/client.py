@@ -202,12 +202,6 @@ class VectorTable:
 
             id_column_def = ColumnDefinition(name='id', postgres_type='smallserial')
 
-            logger.info('Creating metadata table (if not exists)')
-
-            conn.execute(
-                f'CREATE TABLE IF NOT EXISTS {self.schemaname}.metadata ({id_column_def} PRIMARY KEY, key VARCHAR(2048), value jsonb, type VARCHAR(2048), timestamp timestamp)',  # noqa
-            )
-
     def insert(
         self,
         records: List[Dict[str, Any]],
