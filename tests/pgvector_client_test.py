@@ -89,39 +89,29 @@ def table_with_data():
     return table
 
 
+def test_num_records(table_with_data):
+    table = table_with_data
+    assert table.num_records == 100
+
+
 def test_table_creation_skips_if_already_exists(table_with_data):
     table = table_with_data
     table.create()
-    with psycopg.connect(CONNINFO, row_factory=dict_row) as conn:
-        with conn.cursor() as cur:
-            cur.execute('SELECT count(*) FROM public.items')
-            assert cur.fetchone()['count'] == 100
+    assert table.num_records == 100
 
 
 def test_table_creation_with_recreate_if_exists(table_with_data):
     table = table_with_data
-    with psycopg.connect(CONNINFO, row_factory=dict_row) as conn:
-        with conn.cursor() as cur:
-            cur.execute('SELECT count(*) FROM public.items')
-            assert cur.fetchone()['count'] == 100
+    assert table.num_records == 100
     table.create(recreate_if_exists=True)
-    with psycopg.connect(CONNINFO, row_factory=dict_row) as conn:
-        with conn.cursor() as cur:
-            cur.execute('SELECT count(*) FROM public.items')
-            assert cur.fetchone()['count'] == 0
+    assert table.num_records == 0
 
 
 def test_truncate_table(table_with_data):
     table = table_with_data
-    with psycopg.connect(CONNINFO, row_factory=dict_row) as conn:
-        with conn.cursor() as cur:
-            cur.execute('SELECT count(*) FROM public.items')
-            assert cur.fetchone()['count'] == 100
+    assert table.num_records == 100
     table.truncate()
-    with psycopg.connect(CONNINFO, row_factory=dict_row) as conn:
-        with conn.cursor() as cur:
-            cur.execute('SELECT count(*) FROM public.items')
-            assert cur.fetchone()['count'] == 0
+    assert table.num_records == 0
 
 
 def test_create_index(table_with_data):
@@ -169,3 +159,6 @@ def test_search_fails_without_both_num_results_and_distance(table_with_data):
     table = table_with_data
     with pytest.raises(ValueError):
         table.search(query_vector=[0 for _ in range(128)])
+
+
+# TODO: test for index build status
