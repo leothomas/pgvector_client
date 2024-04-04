@@ -135,6 +135,8 @@ class VectorTable:
 
         self.schemaname = schemaname
         self.tablename = tablename
+
+        # TODO: infer these values from the table, if exists
         self.vector_column_name = vector_column_name
         self.vector_column_dimension = vector_column_dimension
 
@@ -244,7 +246,7 @@ class VectorTable:
             result = conn.execute(
                 f"SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = '{self.schemaname}' AND tablename = '{self.tablename}' AND indexname = '{index.name}')",  # noqa
             )
-            return result.fetchone()[0]
+            return result.fetchone()[0]  # type: ignore
 
     def list_indexes(self):
         with self.conn_pool.connection() as conn:
@@ -290,6 +292,7 @@ class VectorTable:
     def search(
         self,
         query_vector: List[float],
+        search_params: Dict = {},
         distance_metric: DistanceMetric = DistanceMetric.euclidean,
         num_results: Optional[int] = None,
         distance: Optional[float] = None,
@@ -298,7 +301,15 @@ class VectorTable:
         if not num_results and not distance:
             raise ValueError('Either limit or distance must be provided')
 
+        # TODO: check if the query vector has the correct dimensions
+        # TODO: check if the table has an index for the requested distance metric
+        # TODO: create default search params per index
+
         with self.conn_pool.connection() as conn:
+
+            for k, v in search_params.items():
+                conn.execute(f'SET LOCAL {k} = {v}')
+
             distance_op = DISTANCE_METRIC_TO_SEARCH_OP[distance_metric.value]
             query_vector_str = str(query_vector)
             query = f"SELECT *, {self.vector_column_name} {distance_op} '{query_vector_str}' as _distance FROM {self.schemaname}.{self.tablename}"  # noqa
