@@ -177,6 +177,9 @@ class VectorTable:
         self.__bootstrap_database()
 
         if self.exists() and recreate_if_exists:
+            logger.info(
+                f'Table exists, and recreation was requested. Dropping table {self.tablename}',
+            )
             self.truncate()
             self.delete()
 
@@ -268,6 +271,9 @@ class VectorTable:
     ):
 
         if self.index_exists(index) and recreate_if_exists:
+            logger.info(
+                f'Index {index.name} exists, and recreation was requested. Dropping index',
+            )
             self.delete_index(index)
 
         with self.conn_pool.connection() as conn:
@@ -277,13 +283,13 @@ class VectorTable:
             conn.execute(f"SET LOCAL maintenance_work_mem = '{maintenance_work_mem}'")
             conn.execute(f'SET LOCAL max_parallel_workers = {max_parallel_workers}')
             conn.execute(
-                f'CREATE INDEX {index.name} ON {self.schemaname}.{self.tablename} USING {index.family.value} ({self.vector_column_name} {DISTANCE_METRIC_TO_INDEX_OP[index.distance_metric.value]}) WITH ({index.build_params_string()})',  # noqa
+                f'CREATE INDEX IF NOT EXISTS {index.name} ON {self.schemaname}.{self.tablename} USING {index.family.value} ({self.vector_column_name} {DISTANCE_METRIC_TO_INDEX_OP[index.distance_metric.value]}) WITH ({index.build_params_string()})',  # noqa
             )
 
     def get_index_build_status(self, index: Union[VectorIndexIVFFlat, VectorIndexHSNW]):
         with self.conn_pool.connection() as conn:
             result = conn.execute(
-                f'SELECT phase, round(100.0 * blocks_done / nullif(blocks_total, 0), 4) AS "% blocks done", round(100.0 * tuples_done / nullif(tuples_total , 0), 4) AS "% tuples done" FROM pg_stat_progress_create_index WHERE index_relid = \'{self.schemaname}.{index.name}\'',  # noqa
+                f'SELECT phase, round(100.0 * blocks_done / nullif(blocks_total, 0), 4) AS "% blocks done", round(100.0 * tuples_done / nullif(tuples_total , 0), 4) AS "% tuples done" FROM pg_stat_progress_create_index',  # noqa
             )
             return result.fetchone()
 
