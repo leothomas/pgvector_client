@@ -8,6 +8,7 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
 logging.basicConfig(level=logging.INFO)
@@ -129,6 +130,7 @@ class VectorTable:
             max_idle=300,
             num_workers=3,  # Number of background worker threads used to maintain the pool state
             open=False,
+            kwargs={'row_factory': dict_row},
         )
 
         self.conn_pool.open()
@@ -157,7 +159,7 @@ class VectorTable:
             result = conn.execute(
                 f"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = '{self.schemaname}' AND table_name = '{self.tablename}')",  # noqa
             )
-            return result.fetchone()[0]
+            return result.fetchone()['exists']
 
     def truncate(self):
         logger.info(f'Dropping data from table {self.tablename}')
@@ -241,7 +243,7 @@ class VectorTable:
             result = conn.execute(
                 f'SELECT count(*) FROM {self.schemaname}.{self.tablename}',
             )
-            return result.fetchone()[0]
+            return result.fetchone()['count']
 
     def index_exists(self, index: Union[VectorIndexIVFFlat, VectorIndexHSNW]):
 
@@ -249,7 +251,7 @@ class VectorTable:
             result = conn.execute(
                 f"SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = '{self.schemaname}' AND tablename = '{self.tablename}' AND indexname = '{index.name}')",  # noqa
             )
-            return result.fetchone()[0]  # type: ignore
+            return result.fetchone()['exists']
 
     def list_indexes(self):
         with self.conn_pool.connection() as conn:
