@@ -283,7 +283,7 @@ class VectorTable:
     def get_index_build_status(self, index: Union[VectorIndexIVFFlat, VectorIndexHSNW]):
         with self.conn_pool.connection() as conn:
             result = conn.execute(
-                f'SELECT phase, round(100.0 * blocks_done / nullif(blocks_total, 0), 4) AS "% blocks done", round(100.0 * tuples_done / nullif(tuples_total , 0), 4) AS "% tuples done" FROM pg_stat_progress_create_index; WHERE indexrelid = \'{self.schemaname}.{index.name}\'',  # noqa
+                f'SELECT phase, round(100.0 * blocks_done / nullif(blocks_total, 0), 4) AS "% blocks done", round(100.0 * tuples_done / nullif(tuples_total , 0), 4) AS "% tuples done" FROM pg_stat_progress_create_index WHERE indexrelid = \'{self.schemaname}.{index.name}\'',  # noqa
             )
             return result.fetchone()
 
