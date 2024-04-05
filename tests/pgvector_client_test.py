@@ -4,8 +4,8 @@ import psycopg
 import pytest
 from psycopg.rows import dict_row
 
-from pgvector_client.client import VectorIndexIVFFlat
-from pgvector_client.client import VectorTable
+from pgvector_client import VectorIndexIVFFlat
+from pgvector_client import VectorTable
 
 
 CONNINFO = 'host=localhost port=5432 dbname=postgres user=postgres password=password'
