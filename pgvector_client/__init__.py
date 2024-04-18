@@ -123,7 +123,7 @@ class VectorTable:
         self.conn_pool = ConnectionPool(
             conninfo=self.conninfo,
             min_size=1,  # The minimum number of connection the pool will hold
-            max_size=10,  # The maximum number of connections the pool will hold
+            max_size=50,  # The maximum number of connections the pool will hold
             max_waiting=50000,  # Maximum number of requests that can be queued to the pool
             # Maximum time, in seconds, that a connection can stay unused in the pool before being
             # closed and the pool shrunk.
