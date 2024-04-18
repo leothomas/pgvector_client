@@ -295,10 +295,10 @@ class VectorTable:
             )
             return result.fetchone()
 
-    def fetch(self, id: Union[int, str]):
+    def fetch(self, _id: Union[int, str]):
         with self.conn_pool.connection() as conn:
             result = conn.execute(
-                f'SELECT * FROM {self.schemaname}.{self.tablename} WHERE id = {id}',
+                f'SELECT * FROM {self.schemaname}.{self.tablename} WHERE id = {_id}',
             )
             return result.fetchone()
 
