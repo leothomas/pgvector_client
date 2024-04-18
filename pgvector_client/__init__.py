@@ -295,6 +295,13 @@ class VectorTable:
             )
             return result.fetchone()
 
+    def fetch(self, id: Union[int, str]):
+        with self.conn_pool.connection() as conn:
+            result = conn.execute(
+                f'SELECT * FROM {self.schemaname}.{self.tablename} WHERE id = {id}',
+            )
+            return result.fetchone()
+
     # TODO: add PCA dimensionality reduction to ingestion and search
     # TODO: check if query has a covering index
     def search(
