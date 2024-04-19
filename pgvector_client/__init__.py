@@ -8,7 +8,9 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+from psycopg.adapt import Loader
 from psycopg.rows import dict_row
+from psycopg.types import TypeInfo
 from psycopg_pool import ConnectionPool
 
 logging.basicConfig(level=logging.INFO)
@@ -105,6 +107,21 @@ class VectorIndexHSNW(VectorIndexBase):
         return f'Index Definition <family: HNSW, distance metric: {self.distance_metric.value}, build params(m={self.m}, ef_construction={self.ef_construction})'  # noqa
 
 
+class VectorLoader(Loader):
+    def load(self, data):
+        if data is None:
+            return None
+        data = bytes(data).decode('utf-8')
+        return [float(d) for d in data.strip('[]').split(',')]
+
+
+def register_vector_type_adapter(conn):
+
+    t = TypeInfo.fetch(conn, 'vector')
+    t.register(conn)
+    conn.adapters.register_loader('vector', VectorLoader)
+
+
 class VectorTable:
     def __init__(
         self,
@@ -131,6 +148,7 @@ class VectorTable:
             num_workers=3,  # Number of background worker threads used to maintain the pool state
             open=False,
             kwargs={'row_factory': dict_row},
+            configure=register_vector_type_adapter,
         )
 
         self.conn_pool.open()

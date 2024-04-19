@@ -147,12 +147,16 @@ def test_search_by_num_results(table_with_data):
     table = table_with_data
     records = table.search(query_vector=[0 for _ in range(128)], num_results=10)
     assert len(records) == 10
+    assert all(r['_distance'] == 0 for r in records)
+    assert all(type(r['vector']) is list for r in records)
 
 
 def test_search_by_distance(table_with_data):
     table = table_with_data
     records = table.search(query_vector=[0 for _ in range(128)], distance=0.5)
     assert len(records) == 100
+    assert all(r['_distance'] == 0 for r in records)
+    assert all(type(r['vector']) is list for r in records)
 
 
 def test_search_fails_without_both_num_results_and_distance(table_with_data):
