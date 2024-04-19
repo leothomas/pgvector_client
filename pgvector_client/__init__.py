@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from enum import Enum
 from typing import Any
 from typing import Dict
@@ -71,6 +72,25 @@ class VectorIndexBase:
         distance_metric: DistanceMetric = DistanceMetric.euclidean,
     ):
         self.distance_metric = distance_metric
+
+    @staticmethod
+    def parse(name: str):
+        _, _, family, distance_metric, *build_args = name.split('_')
+        if family == 'ivfflat':
+            nlists = build_args[0].strip('nl')
+            return VectorIndexIVFFlat(
+                nlist=int(nlists), distance_metric=DistanceMetric(distance_metric),
+            )
+        elif family == 'hnsw':
+            m = build_args[0].strip('m')
+            ef_construction = build_args[1].strip('efc')
+            return VectorIndexHSNW(
+                m=int(m),
+                ef_construction=int(ef_construction),
+                distance_metric=DistanceMetric(distance_metric),
+            )
+        else:
+            raise ValueError(f'Unknown index family: {family}')
 
 
 class VectorIndexIVFFlat(VectorIndexBase):
@@ -276,7 +296,7 @@ class VectorTable:
             result = conn.execute(
                 f"SELECT indexname FROM pg_indexes WHERE schemaname = '{self.schemaname}' AND tablename = '{self.tablename}'",  # noqa
             )
-            return [r['index_name'] for r in result.fetchall()]
+            return [r['indexname'] for r in result.fetchall()]
 
     def delete_index(self, index: Union[VectorIndexIVFFlat, VectorIndexHSNW]):
         with self.conn_pool.connection() as conn:
@@ -331,8 +351,25 @@ class VectorTable:
         distance: Optional[float] = None,
         show_explain: bool = False,
     ):
+
         if not num_results and not distance:
             raise ValueError('Either limit or distance must be provided')
+
+        no_index_cover_flag = True
+        for index in self.list_indexes():
+            if not index.startswith('vector_index'):
+                continue
+            index_def = VectorIndexBase.parse(index)
+            if index_def.distance_metric == distance_metric:
+                no_index_cover_flag = False
+                break
+
+        if no_index_cover_flag:
+            warnings.warn(
+                UserWarning(
+                    'No index covers the requested distance metric. This query may be extremely slow to complete.',
+                ),
+            )
 
         # TODO: check if the query vector has the correct dimensions
         # TODO: check if the table has an index for the requested distance metric

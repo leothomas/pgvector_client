@@ -143,8 +143,15 @@ def test_delete_index(table_with_data):
     assert table.index_exists(index) is False
 
 
+def test_without_coverin_index_raises_warning(table_with_data):
+    table = table_with_data
+    with pytest.warns(UserWarning):
+        table.search(query_vector=[0 for _ in range(128)], num_results=10)
+
+
 def test_search_by_num_results(table_with_data):
     table = table_with_data
+    table.create_index(VectorIndexIVFFlat(nlist=100))
     records = table.search(query_vector=[0 for _ in range(128)], num_results=10)
     assert len(records) == 10
     assert all(r['_distance'] == 0 for r in records)
@@ -153,6 +160,7 @@ def test_search_by_num_results(table_with_data):
 
 def test_search_by_distance(table_with_data):
     table = table_with_data
+    table.create_index(VectorIndexIVFFlat(nlist=100))
     records = table.search(query_vector=[0 for _ in range(128)], distance=0.5)
     assert len(records) == 100
     assert all(r['_distance'] == 0 for r in records)
@@ -161,6 +169,7 @@ def test_search_by_distance(table_with_data):
 
 def test_search_fails_without_both_num_results_and_distance(table_with_data):
     table = table_with_data
+    table.create_index(VectorIndexIVFFlat(nlist=100))
     with pytest.raises(ValueError):
         table.search(query_vector=[0 for _ in range(128)])
 
